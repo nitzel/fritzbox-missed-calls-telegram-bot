@@ -18,7 +18,7 @@ First, please install Python 3 and then install the necessary packages as superu
 ### Telegram Bot Token
 On Telegram, talk to **BotFather** to create a bot and get its access-token.
 
-```
+```bash
 /newbot
 #Botfather: name?
 internbotname
