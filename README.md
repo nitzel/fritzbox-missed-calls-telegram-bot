@@ -5,7 +5,7 @@ It only works if your calls are managed by an AVM FritzBox.
 # Usage
 ## Prerequisites
 ### Software
-First, please install Python 3 and then install the necessary packages as superuser/admin:
+First, please install [Python 3.x](https://www.python.org/downloads/) and then install the necessary packages as superuser/admin:
 
 - [requests]()
 - [lxml](https://github.com/lxml/lxml) to parse XML
