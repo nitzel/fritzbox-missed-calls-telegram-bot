@@ -2,7 +2,7 @@
 **What?** This bot will inform you about (fixed-line) calls you missed via the [telegram-messenger](https://telegram.org/).
 It only works if your calls are managed by an AVM FritzBox. If available, it also displays the name associated with the phone number so that you know, who tried to call you - without even beeing at home.
 
-![readme_chat](https://cloud.githubusercontent.com/assets/8362046/20415123/9ce2f028-ad36-11e6-84f4-8e4ae5699d15.jpg)
+![9ce2f028-ad36-11e6-84f4-8e4ae5699d16](https://cloud.githubusercontent.com/assets/8362046/20426026/8f24585e-ad7d-11e6-88d2-f491e7b36f4a.jpg)
 
 # Usage
 ## Prerequisites
