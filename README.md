@@ -1,6 +1,6 @@
 # Fritzbox Missed Calls Bot
 **What?** This bot will inform you about (fixed-line) calls you missed via the [telegram-messenger](https://telegram.org/).
-It only works if your calls are managed by an AVM FritzBox.
+It only works if your calls are managed by an AVM FritzBox. If available, it also displays the name associated with the phone number so that you know, who tried to call you - without even beeing at home.
 
 # Usage
 ## Prerequisites
@@ -56,8 +56,8 @@ You can control it via a few commands:
 - `/info` The chat ids the bot is currently informing.
 
 So go ahead and type `/start` and tell a friend to call you. If his phone-number
-is available via a reverse lookup in the config file, via [tellows](tellows.de) or
-[dastelefonbuch](dastelefonbuch.de) his name will show up.
+is available via a reverse lookup in the config file, via [tellows(Germany)](tellows.de) or
+[dastelefonbuch(Germany)](dastelefonbuch.de) his name will show up.
 Otherwise, it'll just be his number next to a question mark.
 
 ## Config
@@ -66,3 +66,6 @@ Otherwise, it'll just be his number next to a question mark.
 - `knownCallId` The call-id of the most recent call that the bot has processed
 - `phonebook` A dict with phonenumbers matched to names for reverse lookups.
 - `clientChatIds` IDs of the Telegram-Chats the bot informs about new calls.
+
+# Hacking the source
+- **Add reverse lookups for phone numbers from your country:** Take a look at teh class `Phonebook` in [fritzbox.py](/fritzbotcallinfo/fritzbox.py). The function that performs the reverse lookup (matching a name to the phone number) is called `Phonebook.nameFromNumberLookup` and calls one of three functions beginning with `nameFrom`. Add yours or edit one of them to fit a service providing reverse lookups for your countries phone numbers. 
