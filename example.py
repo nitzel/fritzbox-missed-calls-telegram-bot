@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+""" Simplest example for fritzboxcallinfo usage """
 from fritzbotcallinfo import CallInfoBot
 
-cib = CallInfoBot(configFile = 'bot_phonebook.cfg')
 
-cib.startPolling()
-cib.updater.idle()
+CI_BOT = CallInfoBot(configFile='bot_phonebook.cfg')
+
+CI_BOT.startPolling()
+CI_BOT.updater.idle()

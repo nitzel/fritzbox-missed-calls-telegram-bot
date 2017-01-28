@@ -2,12 +2,13 @@
 # dependencies:
 # - telegram python bot
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Job
-from .fritzbox import CheckCallList
 import json
-import time
+from telegram.ext import Updater, CommandHandler, Filters, Job
+from .fritzbox import CheckCallList
 
-import logging
+
+# use logging when testing:
+# import logging
 # logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.INFO)
 
 class CallInfoBot():
@@ -15,7 +16,7 @@ class CallInfoBot():
     CHECK_FRITZBOX_INTERVAL = 20 # in seconds
 
 
-    def __init__(self, configFile = PHONEBOOK_CONFIG_FILE):
+    def __init__(self, configFile=PHONEBOOK_CONFIG_FILE):
         """ only works with a valid config file (yet) """
         self.configFile = configFile
 
@@ -31,14 +32,18 @@ class CallInfoBot():
             self.ccl = CheckCallList.loadFromConfig(data)
             # copy config to this class
             self.config = data['bot']
-            # # self.config = {'checkFritzboxInterval' = checkFritzboxInterval, 'telegramToken' = telegramToken, 'clientChatIds' = list(self.clientChatIds)}
+            # If config is to be manually defined:
+            # self.config = {'checkFritzboxInterval' = checkFritzboxInterval,
+            #                'telegramToken' = telegramToken,
+            #                'clientChatIds' = list(self.clientChatIds)}
             for key in self.config.keys():
-                print("k",key,"v",self.config[key])
-                setattr(self,key,self.config[key])
+                print("k", key, "v", self.config[key])
+                setattr(self, key, self.config[key])
         # convert to set
         self.clientChatIds = set(self.clientChatIds)
 
-        print("token",self.telegramToken,"intervall", self.checkFritzboxInterval)
+        print("token", self.telegramToken,
+              "intervall", self.checkFritzboxInterval)
 
         # initing the bot
         self.updater = Updater(token=self.telegramToken)
@@ -88,7 +93,7 @@ class CallInfoBot():
             self.saveToFile(self.configFile)
             # create message to send out
             msgtext = "#################\n"
-            msgtext += "**{0} new call{1}:**\n\n".format(len(newCalls), '' if len(newCalls)==1 else 's') # plural s :)
+            msgtext += "**{0} new call{1}:**\n\n".format(len(newCalls), '' if len(newCalls) == 1 else 's') # plural s :)
             msgtext += '\n\n'.join(map(lambda x: x.toMd(), newCalls)) # calls -> text
             msgtext += "\n#################"
             # spread to all receivers
@@ -113,12 +118,14 @@ class CallInfoBot():
         bot.sendMessage(chat_id=update.message.chat_id, text=answer)
 
 
-    def cb_unknown(self, bot, udpate):
+    def cb_unknown(self, bot, update):
         print("unknown command!")
         bot.sendMessage(chat_id=update.message.chat_id, text="Unknown command")
 
 
     def cb_info(self, bot, update):
         print("printing info")
-        msgtext = "I am reporting to those chats: \n"+"\n".join(map(lambda x: "`"+str(x)+"`", self.clientChatIds))
+        chats_as_strings = map(lambda x: "`"+str(x)+"`", self.clientChatIds)
+        chats = "\n".join(chats_as_strings)
+        msgtext = "I am reporting to those chats: \n" + chats
         bot.sendMessage(chat_id=update.message.chat_id, text=msgtext, parse_mode='Markdown')

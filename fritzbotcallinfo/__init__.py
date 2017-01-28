@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-
-# from .phonebook import (
-#     CheckCallList
-# )
-
+""" defining the default imports of package fritzbotcallinfo """
 from .bot import CallInfoBot
+
 
 __all__ = ["CallInfoBot"]
