@@ -49,8 +49,12 @@ class CallInfoBot():
         self.updater = Updater(token=self.telegramToken)
 
         # add handlers etc
-        job_minute = Job(self.cb_minute, self.checkFritzboxInterval, repeat=True, context=self.ccl)
-        self.updater.job_queue.put(job_minute, next_t=0.0)
+        self.updater.job_queue.run_repeating(
+            name='Check Fritzbox',
+            callback=self.cb_minute,
+            context=self.ccl,
+            interval=self.checkFritzboxInterval,
+            first=0.0)
 
         start_handler = CommandHandler('start', self.cb_start)
         self.updater.dispatcher.add_handler(start_handler)
