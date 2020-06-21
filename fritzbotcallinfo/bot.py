@@ -9,7 +9,7 @@ from .fritzbox import CheckCallList
 
 # use logging when testing:
 # import logging
-# logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',level=logging.INFO)
+# logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 class CallInfoBot():
     PHONEBOOK_CONFIG_FILE = "bot_phonebook.cfg"
@@ -46,7 +46,7 @@ class CallInfoBot():
               "intervall", self.checkFritzboxInterval)
 
         # initing the bot
-        self.updater = Updater(token=self.telegramToken)
+        self.updater = Updater(token=self.telegramToken, use_context=True)
 
         # add handlers etc
         self.updater.job_queue.run_repeating(

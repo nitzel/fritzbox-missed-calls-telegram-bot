@@ -67,7 +67,7 @@ Otherwise, it'll just be his number next to a question mark.
 
 - `knownCallId` The call-id of the most recent call that the bot has processed
 - `phonebook` A dict with phonenumbers matched to names for reverse lookups.
-- `clientChatIds` IDs of the Telegram-Chats the bot informs about new calls.
+- `clientChatIds` IDs of the Telegram-Chats the bot informs about new calls. If the URL of a chat is `https://web.telegram.org/#/im?p=g123` then its id is `g123`.
 
 # Hacking the source
 - **Add reverse lookups for phone numbers from your country:** Take a look at teh class `Phonebook` in [fritzbox.py](/fritzbotcallinfo/fritzbox.py). The function that performs the reverse lookup (matching a name to the phone number) is called `Phonebook.nameFromNumberLookup` and calls one of three functions beginning with `nameFrom`. Add yours or edit one of them to fit a service providing reverse lookups for your countries phone numbers. 
