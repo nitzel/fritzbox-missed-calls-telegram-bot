@@ -86,7 +86,7 @@ class CallInfoBot():
     def stopPolling(self):
         self.updater.stop()
     def cb_minute(self, bot, job):
-        ccl = job.context # get phonebook.CheckCallList
+        ccl: CheckCallList = job.context # get phonebook.CheckCallList
         newCalls = ccl.checkForNewCalls()
         if len(newCalls) > 0:
             # save changes
@@ -94,6 +94,7 @@ class CallInfoBot():
             # create message to send out
             msgtext = "#################\n"
             msgtext += "**{0} new call{1}:**\n\n".format(len(newCalls), '' if len(newCalls) == 1 else 's') # plural s :)
+            # pylint: disable=E1101
             msgtext += '\n\n'.join(map(lambda x: x.toMd(), newCalls)) # calls -> text
             msgtext += "\n#################"
             # spread to all receivers

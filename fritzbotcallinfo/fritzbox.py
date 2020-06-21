@@ -12,6 +12,7 @@
 import html
 import urllib.request
 from lxml import etree
+from typing import List
 
 from fritzconnection import (FritzConnection)
 
@@ -155,7 +156,7 @@ class CheckCallList:
         Phonebook.phonebook = data['phonebook']
         return CheckCallList(**data['CHECKCALLLIST_INITDATA'])
 
-    def checkForNewCalls(self, knownCallId=None):
+    def checkForNewCalls(self, knownCallId=None) -> List[Call]:
         if knownCallId is not None:
             self.knownCallId = knownCallId
         # get the URL to the xml file with all calls
