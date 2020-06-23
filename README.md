@@ -7,26 +7,28 @@ It only works if your calls are managed by an AVM FritzBox. If available, it als
 # Usage
 ## Prerequisites
 ### Software
-First, please install [Python 3.x](https://www.python.org/downloads/) and then install the necessary packages as superuser/admin:
+The versions given here are the ones I used at the time of development. Feel free to experiment with upgrading to other versions but then the code may require tweaking.
 
-- [requests]()
-- [lxml](https://github.com/lxml/lxml) to parse XML
+First, please install [Python 3.7](https://www.python.org/downloads/) and then install the necessary packages as superuser/admin (best would probably be a specific [Python Environment](https://docs.python.org/3/tutorial/venv.html) but that's not a must):
+
+- `requests==2.24.0`
+- [lxml==4.5.1](https://github.com/lxml/lxml) to parse XML
   - [precombiled windows binary](http://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml) and then `pip install lxml-....whl`
-- [fritzconnection](https://github.com/kbr/fritzconnection) to access the FritzBox API
-- [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot) to manage your Telegram Bot
+- [fritzconnection==1.3.0](https://github.com/kbr/fritzconnection) to access the FritzBox API
+- [python-telegram-bot==12.7](https://github.com/python-telegram-bot/python-telegram-bot) to manage your Telegram Bot
 
-`pip install requests lxml fritzconnection python-telegram-bot --upgrade` or `pip install somepackage.whl`
+`pip install requests==2.24.0, lxml==4.5.1, fritzconnection==1.3.0, python-telegram-bot==12.7`
 
 ### Telegram Bot Token
 On Telegram, talk to **BotFather** to create a bot and get its access-token.
 
 ```bash
 /newbot
-#Botfather: name?
+# Botfather: name?
 internbotname
-#Botfather: username?
+# Botfather: username?
 VisibleNameEndingWithBot
-#Botfather: Congrats, your token is TOKEN
+# Botfather: Congrats, your token is TOKEN
 ```
 
 You'll need that token later!
@@ -37,6 +39,8 @@ You'll need that token later!
   - If the bot is running the FritzBox' LAN, the local IP is what we need. Usually it's yours but ending on `.1`.
 - Create a user with access to the call-list and remember its name and password.
   - For security reason, disable access from internet if the bot runs from the LAN.
+
+*Don't have a FritzBox at the moment? No problem, open `example.py` and set `mock_fritzbox=True`.*
 
 ### Config
 Open [bot_phonebook.cfg](./bot_phonebook.cfg) in your favorite UTF-8 compatible text editor.

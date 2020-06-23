@@ -155,7 +155,7 @@ class CheckCallListMock:
     """
 
     def __init__(self, initial_data):
-        self.knownCallId = int(knownCallId)
+        self.knownCallId = int(initial_data['knownCallId'])
         self.CHECKCALLLIST_INITDATA = initial_data
         pass
 

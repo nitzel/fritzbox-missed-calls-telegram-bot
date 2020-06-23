@@ -3,7 +3,7 @@
 # - telegram python bot
 
 import json
-from telegram.ext import Updater, CommandHandler, Filters, Job
+from telegram.ext import CommandHandler, Filters, Job, MessageHandler, Updater
 from .fritzbox import CheckCallList
 from telegram.ext.callbackcontext import CallbackContext
 
@@ -71,8 +71,7 @@ class CallInfoBot():
         info_handler = CommandHandler('info', self.cb_info)
         self.updater.dispatcher.add_handler(info_handler)
 
-        # unknown_handler = CommandHandler(Filters.command(True) & ~Filters.command(False), self.cb_unknown)
-        # self.updater.dispatcher.add_handler(unknown_handler)
+        self.updater.dispatcher.add_handler(MessageHandler(Filters.command, self.cb_unknown))
         self.updater.dispatcher.add_error_handler(self.cb_error)
 
     def saveToFile(self, filename):
@@ -94,11 +93,8 @@ class CallInfoBot():
     def stopPolling(self):
         self.updater.stop()
 
-    def cb_error(self, arg1, arg2, arg3):
-        print('An error occured')
-        print('arg1', arg1)
-        print('arg2', arg2)
-        print('arg3', arg3)
+    def cb_error(self, arg1):
+        print('An error occured', arg1)
 
     def cb_check_fritzbox(self, context: CallbackContext):
         """
@@ -142,7 +138,7 @@ class CallInfoBot():
         no longer be notified of new calls to the FritzBox.
         """
 
-        print("Unsubscribing chat_id '{update.message.chat_id}'")
+        print(f"Unsubscribing chat_id '{update.message.chat_id}'")
         try:
             self.clientChatIds.remove(update.message.chat_id)
             answer = "You sucessfully unsubscribed."
@@ -153,11 +149,12 @@ class CallInfoBot():
         update.message.reply_text(answer)
 
     def cb_unknown(self, update, context):
-        print("unknown command!")
-        update.message.reply_text("Unknown command")
+        message_text = update.message.text
+        print(f"Unknown command '{message_text}'")
+        update.message.reply_text(f"Unknown command '{message_text}'")
 
     def cb_info(self, update, context):
-        chats_as_strings = map(lambda x: "`"+str(x)+"`", self.clientChatIds)
+        chats_as_strings = map(lambda x: f"`{x}`", self.clientChatIds)
         chats = "\n".join(chats_as_strings)
         msgtext = "The following chats are subscribed: \n" + chats
         update.message.reply_text(msgtext, parse_mode='Markdown')
