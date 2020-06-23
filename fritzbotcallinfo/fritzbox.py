@@ -13,6 +13,8 @@ import html
 import urllib.request
 from lxml import etree
 from typing import List
+from random import randint, choice # only for mock
+from datetime import datetime # only for mock
 
 from fritzconnection import (FritzConnection)
 
@@ -95,23 +97,27 @@ class Phonebook:
 
     @staticmethod
     def nameFromNumberLookup(phonenumber):
-        phonenumber = str(phonenumber)
+        phonenumber = str(phonenumber).replace(' ', '')
         if phonenumber not in Phonebook.phonebook:
             # now try to find that number with an reverse lookup
             try:
                 # add new entry to our reverse lookup phonebook
                 Phonebook.phonebook[phonenumber] = Phonebook.nameFromDastelefonbuch(phonenumber)
-            except Exception:
+            except Exception as ex_dastelefonbuch:
                 # try again with another service
                 try:
                     # add new entry to our reverse lookup phonebook
                     Phonebook.phonebook[phonenumber] = Phonebook.nameFromTellowsBasic(phonenumber)
-                except Exception:
+                except Exception as ex_tellowsbasic:
                     # try again with another service
                     try:
                         # add new entry to our reverse lookup phonebook
                         Phonebook.phonebook[phonenumber] = Phonebook.nameFromTellows(phonenumber)
-                    except BaseException:
+                    except BaseException as ex_tellows:
+                        print(f'All phonebook lookups failed number "{phonenumber}" - falling back to "?"')
+                        print(f"  DasTelefonbuch:", ex_dastelefonbuch)
+                        print(f"  Tellows Basic :", ex_tellowsbasic)
+                        print(f"  Tellows       :", ex_tellows)
                         # print("2 reverse lookup exceptions: \n1.", e, "and \n2. ", f)
                         # create pseudo entry to avoid repeated unsuccessful lookup attempts
                         Phonebook.phonebook[phonenumber] = '?'
@@ -120,6 +126,12 @@ class Phonebook:
 
 class Call:
     def __init__(self, phonenumber, date, duration, name=None):
+        """
+        Parameters
+        ----------
+            data : str
+                Expected to be in format `hh:mm` (e.g. `3:42` or `03:42` or `0:01`)
+        """
         self.phonenumber = phonenumber
         self.date = date
         self.duration = duration+'m' # for minutes
@@ -136,9 +148,45 @@ class Call:
         return "*{0}* called us on *{1}* for *{2}*\n\t*Phone:* `{3}`".\
                 format(self.name, self.date, self.duration, self.phonenumber)
 
+class CheckCallListMock:
+    """
+    Intended to be used for testing instead of `CheckCallList` when a FritzBox is not available.
+    Generates random calls from numbers that already exist in the Phonebook's dictionary.
+    """
+
+    def __init__(self, initial_data):
+        self.knownCallId = int(knownCallId)
+        self.CHECKCALLLIST_INITDATA = initial_data
+        pass
+
+    def getConfig(self):
+        self.CHECKCALLLIST_INITDATA['knownCallId'] = self.knownCallId
+        return {
+            'phonebook': Phonebook.phonebook,
+            'CHECKCALLLIST_INITDATA': self.CHECKCALLLIST_INITDATA
+        }
+
+    def checkForNewCalls(self, knownCallId=None) -> List[Call]:
+        available_numbers = list(Phonebook.phonebook.keys())
+        for i in range(randint(0, 5)):
+            self.knownCallId += 1
+            yield Call(choice(available_numbers), str(datetime.utcnow()), f'00:0{i}', None)
+
 class CheckCallList:
     def __init__(self, address='192.168.178.1', user='telegrambot',
-                 password='telegrambot314', knownCallId=5329):
+                 password='telegrambot314', knownCallId=0):
+        """
+        Parameters
+        ----------
+            address : str
+                IP of FritzBox
+            user : str
+                FritzBox credential
+            password : str
+                FritzBox credential
+            knownCallId : str | int
+                ID of the last processed call (process only newer)
+        """
         self.CHECKCALLLIST_INITDATA = {'address':address, 'password':password,
                                        'user':user, 'knownCallId':knownCallId}
         self.connection = FritzConnection(address=address, user=user,
@@ -147,16 +195,34 @@ class CheckCallList:
 
     def getConfig(self):
         self.CHECKCALLLIST_INITDATA['knownCallId'] = self.knownCallId
-        data = {'phonebook':Phonebook.phonebook,
-                'CHECKCALLLIST_INITDATA':self.CHECKCALLLIST_INITDATA}
-        return data
+        return {
+            'phonebook': Phonebook.phonebook,
+            'CHECKCALLLIST_INITDATA': self.CHECKCALLLIST_INITDATA
+        }
 
     @staticmethod
-    def loadFromConfig(data):
+    def loadFromConfig(data, use_mock=False):
+        """
+        Parameters
+        ----------
+            use_mock : boolean
+                If true, will return CheckCallListMock instead of CheckCallList for testing.
+        """
         Phonebook.phonebook = data['phonebook']
+
+        if use_mock:
+            return CheckCallListMock(data['CHECKCALLLIST_INITDATA'])
+
         return CheckCallList(**data['CHECKCALLLIST_INITDATA'])
 
     def checkForNewCalls(self, knownCallId=None) -> List[Call]:
+        """
+        Parameters
+        ----------
+            knownCallId : int
+                Index of last call already processed. Will skip all previous calls.
+                If set to `None` only new calls since the last invocation are be returned.
+        """
         if knownCallId is not None:
             self.knownCallId = knownCallId
         # get the URL to the xml file with all calls

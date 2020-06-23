@@ -55,7 +55,7 @@ In Telegram you can now search for your bots name and start a new chat with him.
 You can control it via a few commands:
 - `/start` The bot will inform you about new calls via this chat.
 - `/stop` The bot will stop informing about new calls via this chat.
-- `/info` The chat ids the bot is currently informing.
+- `/info` A list of chat ids that are currently subscribed.
 
 So go ahead and type `/start` and tell a friend to call you. If his phone-number
 is available via a reverse lookup in the config file, via [tellows(Germany)](tellows.de) or
@@ -65,9 +65,12 @@ Otherwise, it'll just be his number next to a question mark.
 ## Config
 [bot_phonebook.cfg](./bot_phonebook.cfg)
 
-- `knownCallId` The call-id of the most recent call that the bot has processed
-- `phonebook` A dict with phonenumbers matched to names for reverse lookups.
-- `clientChatIds` IDs of the Telegram-Chats the bot informs about new calls. If the URL of a chat is `https://web.telegram.org/#/im?p=g123` then its id is `g123`. I'd recommend trying this with group chats first, after adding the bot to it (`Menu` -> `Add to group` -> `@nameOfYourBot`)
+- `knownCallId` The call-id of the most recent call that the bot has processed. Older calls will be ignored.
+- `phonebook` A dict with phonenumbers matched to names for reverse lookups. If a callers number cannot be found in this dictionary, a lookup is attempted in several online phonebooks. The result is then stored in here for later lookups.
+- `bot`
+  - `clientChatIds` IDs of the subscribed Telegram-Chats. These are notified by the bot about new calls.
+  - `telegramToken` The token you got from the BotFather.
+  - `checkFritzboxInterval` The time in seconds between checking the FritzBox for new calls.
 
 # Hacking the source
 - **Add reverse lookups for phone numbers from your country:** Take a look at teh class `Phonebook` in [fritzbox.py](/fritzbotcallinfo/fritzbox.py). The function that performs the reverse lookup (matching a name to the phone number) is called `Phonebook.nameFromNumberLookup` and calls one of three functions beginning with `nameFrom`. Add yours or edit one of them to fit a service providing reverse lookups for your countries phone numbers. 

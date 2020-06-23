@@ -5,20 +5,29 @@
 import json
 from telegram.ext import Updater, CommandHandler, Filters, Job
 from .fritzbox import CheckCallList
-
+from telegram.ext.callbackcontext import CallbackContext
 
 # use logging when testing:
 # import logging
 # logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
+
 class CallInfoBot():
     PHONEBOOK_CONFIG_FILE = "bot_phonebook.cfg"
-    CHECK_FRITZBOX_INTERVAL = 20 # in seconds
+    CHECK_FRITZBOX_INTERVAL = 20  # in seconds
 
+    def __init__(self, config_file=PHONEBOOK_CONFIG_FILE, mock_fritzbox=False):
+        """
+        Only works with a valid config file (yet)
 
-    def __init__(self, configFile=PHONEBOOK_CONFIG_FILE):
-        """ only works with a valid config file (yet) """
-        self.configFile = configFile
+        Parameters
+        ----------
+            config_file : str
+                Path to a valid config file (see `README`)
+            mock_fritzbox : boolean
+                Set true to test the Telegram Bot without having a FritzBox to connect to.
+        """
+        self.configFile = config_file
 
         # to be laoded from config file!
         self.clientChatIds = set()
@@ -29,13 +38,10 @@ class CallInfoBot():
         with open(self.configFile, 'r') as stream:
             data = json.load(stream)
             # init fritzbox calllist checker
-            self.ccl = CheckCallList.loadFromConfig(data)
+            self.ccl = CheckCallList.loadFromConfig(data, use_mock=mock_fritzbox)
             # copy config to this class
             self.config = data['bot']
-            # If config is to be manually defined:
-            # self.config = {'checkFritzboxInterval' = checkFritzboxInterval,
-            #                'telegramToken' = telegramToken,
-            #                'clientChatIds' = list(self.clientChatIds)}
+
             for key in self.config.keys():
                 print("k", key, "v", self.config[key])
                 setattr(self, key, self.config[key])
@@ -51,7 +57,7 @@ class CallInfoBot():
         # add handlers etc
         self.updater.job_queue.run_repeating(
             name='Check Fritzbox',
-            callback=self.cb_minute,
+            callback=self.cb_check_fritzbox,
             context=self.ccl,
             interval=self.checkFritzboxInterval,
             first=0.0)
@@ -65,10 +71,9 @@ class CallInfoBot():
         info_handler = CommandHandler('info', self.cb_info)
         self.updater.dispatcher.add_handler(info_handler)
 
-        unknown_handler = CommandHandler(Filters.command, self.cb_unknown)
-        self.updater.dispatcher.add_handler(unknown_handler)
-
-
+        # unknown_handler = CommandHandler(Filters.command(True) & ~Filters.command(False), self.cb_unknown)
+        # self.updater.dispatcher.add_handler(unknown_handler)
+        self.updater.dispatcher.add_error_handler(self.cb_error)
 
     def saveToFile(self, filename):
         data = self.getConfig()
@@ -83,54 +88,76 @@ class CallInfoBot():
         data["bot"] = self.config
         return data
 
-
-
     def startPolling(self):
         self.updater.start_polling()
+
     def stopPolling(self):
         self.updater.stop()
-    def cb_minute(self, bot, job):
-        ccl: CheckCallList = job.context # get phonebook.CheckCallList
-        newCalls = ccl.checkForNewCalls()
+
+    def cb_error(self, arg1, arg2, arg3):
+        print('An error occured')
+        print('arg1', arg1)
+        print('arg2', arg2)
+        print('arg3', arg3)
+
+    def cb_check_fritzbox(self, context: CallbackContext):
+        """
+        Checks the FritzBox for new calls and notifies all subscribers.
+        """
+        bot = context.bot
+        ccl: CheckCallList = context.job.context  # get phonebook.CheckCallList
+        newCalls = list(ccl.checkForNewCalls())
         if len(newCalls) > 0:
             # save changes
             self.saveToFile(self.configFile)
             # create message to send out
             msgtext = "#################\n"
-            msgtext += "**{0} new call{1}:**\n\n".format(len(newCalls), '' if len(newCalls) == 1 else 's') # plural s :)
+            msgtext += "**{0} new call{1}:**\n\n".format(len(newCalls), '' if len(newCalls) == 1 else 's')  # plural s :)
             # pylint: disable=E1101
-            msgtext += '\n\n'.join(map(lambda x: x.toMd(), newCalls)) # calls -> text
+            msgtext += '\n\n'.join(map(lambda x: x.toMd(), newCalls))  # calls -> text
             msgtext += "\n#################"
             # spread to all receivers
             for chatId in self.clientChatIds:
                 bot.sendMessage(chat_id=chatId, text=msgtext, parse_mode='Markdown')
 
+    def cb_start(self, update, context):
+        """
+        Telegram Command to start a subscription.
+        A subscriber will be notified of all new calls to the FritzBox since the subscription took place.
+        """
+        chat_id = update.message.chat_id
 
-    def cb_start(self, bot, update):
-        print("Add chat_id '{0}'".format(update.message.chat_id))
-        self.clientChatIds.add(update.message.chat_id)
-        bot.sendMessage(chat_id=update.message.chat_id, text="Added to messaging list")
+        if chat_id in self.clientChatIds:
+            update.message.reply_text('You are already subscribed.')
+            return
+
+        print(f"Subscribing chat_id '{chat_id}'")
+        self.clientChatIds.add(chat_id)
+        update.message.reply_text("You have successfully subscribed.")
         self.saveToFile(self.configFile)
 
-    def cb_stop(self, bot, update):
-        print("Remove chat_id '{0}'".format(update.message.chat_id))
+    def cb_stop(self, update, context):
+        """
+        Telegram Command to end a subscription. The unsubscribed will
+        no longer be notified of new calls to the FritzBox.
+        """
+
+        print("Unsubscribing chat_id '{update.message.chat_id}'")
         try:
             self.clientChatIds.remove(update.message.chat_id)
-            answer = "Removed from messaging list."
+            answer = "You sucessfully unsubscribed."
             self.saveToFile(self.configFile)
         except KeyError:
-            answer = "You aren't even in that list. Anyways..."
-        bot.sendMessage(chat_id=update.message.chat_id, text=answer)
+            answer = "You are not subscribed."
 
+        update.message.reply_text(answer)
 
-    def cb_unknown(self, bot, update):
+    def cb_unknown(self, update, context):
         print("unknown command!")
-        bot.sendMessage(chat_id=update.message.chat_id, text="Unknown command")
+        update.message.reply_text("Unknown command")
 
-
-    def cb_info(self, bot, update):
-        print("printing info")
+    def cb_info(self, update, context):
         chats_as_strings = map(lambda x: "`"+str(x)+"`", self.clientChatIds)
         chats = "\n".join(chats_as_strings)
-        msgtext = "I am reporting to those chats: \n" + chats
-        bot.sendMessage(chat_id=update.message.chat_id, text=msgtext, parse_mode='Markdown')
+        msgtext = "The following chats are subscribed: \n" + chats
+        update.message.reply_text(msgtext, parse_mode='Markdown')
